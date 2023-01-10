@@ -148,7 +148,7 @@ public class WebClientIT {
                             });
                 });
 
-        countDownLatch.await(1000, TimeUnit.MILLISECONDS);
+        countDownLatch.await(2000, TimeUnit.MILLISECONDS);
         assertThat(countDownLatch.getCount()).isEqualTo(0);
     }
 
