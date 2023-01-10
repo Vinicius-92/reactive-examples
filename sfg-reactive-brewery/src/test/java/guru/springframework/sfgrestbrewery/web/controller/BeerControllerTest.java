@@ -12,6 +12,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import reactor.core.publisher.Mono;
 
 import java.util.Arrays;
 import java.util.List;
@@ -36,29 +37,31 @@ class BeerControllerTest {
     @BeforeEach
     void setUp() {
         validBeer = BeerDto.builder()
-                .beerName("Test Beer")
+                .beerName("Test beer")
                 .beerStyle("PALE_ALE")
                 .upc(BeerLoader.BEER_1_UPC)
                 .build();
     }
 
     @Test
-    void getBeerById() {
-        UUID beerId = UUID.randomUUID();
-        given(beerService.getById(any(), any())).willReturn(validBeer);
+    void listBeers() {
+        List<BeerDto> beerList = Arrays.asList(validBeer);
+
+        BeerPagedList beerPagedList = new BeerPagedList(beerList, PageRequest.of(1,1), beerList.size());
+
+        given(beerService.listBeers(any(), any(), any(), any())).willReturn(Mono.just(beerPagedList));
 
         webTestClient.get()
-                .uri("/api/v1/beer/" + beerId)
+                .uri("/api/v1/beer")
                 .accept(MediaType.APPLICATION_JSON)
                 .exchange()
                 .expectStatus().isOk()
-                .expectBody(BeerDto.class)
-                .value(beerDto -> beerDto.getBeerName(), equalTo(validBeer.getBeerName()));
+                .expectBody(BeerPagedList.class);
     }
 
     @Test
-    void getBeerByUpc() {
-        given(beerService.getByUpc(any())).willReturn(validBeer);
+    void getBeerByUPC() {
+        given(beerService.getByUpc(any())).willReturn(Mono.just(validBeer));
 
         webTestClient.get()
                 .uri("/api/v1/beerUpc/" + validBeer.getUpc())
@@ -70,18 +73,16 @@ class BeerControllerTest {
     }
 
     @Test
-    void listBeers() {
-        List<BeerDto> beerDtoList = Arrays.asList(validBeer);
-
-        var beerPagedList = new BeerPagedList(beerDtoList, PageRequest.of(1, 1), beerDtoList.size());
-
-        given(beerService.listBeers(any(), any(), any(), any())).willReturn(beerPagedList);
+    void getBeerById() {
+        Integer beerId = 1;
+        given(beerService.getById(any(), any())).willReturn(Mono.just(validBeer));
 
         webTestClient.get()
-                .uri("/api/v1/beer")
+                .uri("/api/v1/beer/" + beerId)
                 .accept(MediaType.APPLICATION_JSON)
                 .exchange()
                 .expectStatus().isOk()
-                .expectBody(BeerPagedList.class);
+                .expectBody(BeerDto.class)
+                .value(beerDto -> beerDto.getBeerName(), equalTo(validBeer.getBeerName()));
     }
 }
